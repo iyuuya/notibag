@@ -1,0 +1,194 @@
+/* iPhone X 横向き表示に最適化 (812x375px) */
+.App {
+  width: 100vw;
+  height: 100vh;
+  background: #1a1a1a;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow: hidden;
+  position: relative;
+}
+
+.clock-widget {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(20px);
+  border-radius: 12px;
+  padding: 12px 16px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  z-index: 1000;
+  user-select: none;
+}
+
+.clock-time {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.clock-date {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.notifications-container {
+  width: 100%;
+  height: 100vh;
+  padding: 20px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.notifications-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+}
+
+.notification-card {
+  background: rgba(248, 249, 250, 1);
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  position: relative;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+  margin-bottom: 16px;
+  width: 100%;
+  box-sizing: border-box;
+  animation: slideIn 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: transform 0.1s ease;
+}
+
+.notification-card.unread {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  border-left: 5px solid #007AFF;
+}
+
+.notification-card.hiding {
+  animation: slideOut 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
+  pointer-events: none;
+}
+
+.notification-card:active:not(.hiding) {
+  transform: scale(0.95);
+  transition: transform 0.05s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOut {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+    height: auto;
+    margin-bottom: 16px;
+    padding: 20px;
+  }
+  70% {
+    opacity: 0;
+    transform: translateX(100%);
+    height: auto;
+    margin-bottom: 16px;
+    padding: 20px;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(100%);
+    height: 0;
+    margin-bottom: 0;
+    padding: 0 20px;
+    overflow: hidden;
+  }
+}
+
+.notification-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.notification-title {
+  font-weight: 600;
+  font-size: 18px;
+  color: #1a1a1a;
+  flex: 1;
+  margin-right: 8px;
+}
+
+.notification-time {
+  font-size: 13px;
+  color: #666;
+  white-space: nowrap;
+}
+
+.notification-body {
+  color: #333;
+  font-size: 15px;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+
+
+/* iPhone X 横向き表示での安全領域対応 */
+@supports (padding: max(0px)) {
+  .notifications-container {
+    padding-left: max(20px, env(safe-area-inset-left));
+    padding-right: max(20px, env(safe-area-inset-right));
+    padding-top: max(20px, env(safe-area-inset-top));
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+  }
+  
+  .clock-widget {
+    bottom: max(20px, env(safe-area-inset-bottom));
+    right: max(20px, env(safe-area-inset-right));
+  }
+}
+
+/* スクロールバーを完全に隠す */
+.notifications-container {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.notifications-container::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
