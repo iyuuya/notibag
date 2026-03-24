@@ -203,17 +203,35 @@ func (s *NotificationServiceImpl) ClearAllNotifications() error {
 	return s.repo.Clear()
 }
 
+// connWithMu wraps a websocket.Conn with a write mutex
+type connWithMu struct {
+	conn *websocket.Conn
+	mu   sync.Mutex
+}
+
+func (c *connWithMu) WriteJSON(v interface{}) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.conn.WriteJSON(v)
+}
+
+func (c *connWithMu) WritePing() error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.conn.WriteMessage(websocket.PingMessage, nil)
+}
+
 // WebSocket manager implementation
 type WSManagerImpl struct {
-	clients   map[*websocket.Conn]bool
-	mu        sync.RWMutex
-	service   NotificationService
-	upgrader  websocket.Upgrader
+	clients  map[*websocket.Conn]*connWithMu
+	mu       sync.RWMutex
+	service  NotificationService
+	upgrader websocket.Upgrader
 }
 
 func NewWSManager(service NotificationService) *WSManagerImpl {
 	return &WSManagerImpl{
-		clients: make(map[*websocket.Conn]bool),
+		clients: make(map[*websocket.Conn]*connWithMu),
 		service: service,
 		upgrader: websocket.Upgrader{
 			CheckOrigin: func(r *http.Request) bool {
@@ -226,13 +244,19 @@ func NewWSManager(service NotificationService) *WSManagerImpl {
 func (w *WSManagerImpl) AddClient(conn *websocket.Conn) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	w.clients[conn] = true
+	w.clients[conn] = &connWithMu{conn: conn}
 }
 
 func (w *WSManagerImpl) RemoveClient(conn *websocket.Conn) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	delete(w.clients, conn)
+}
+
+func (w *WSManagerImpl) GetClient(conn *websocket.Conn) *connWithMu {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+	return w.clients[conn]
 }
 
 func (w *WSManagerImpl) BroadcastNotification(notification Notification) {
@@ -242,13 +266,16 @@ func (w *WSManagerImpl) BroadcastNotification(notification Notification) {
 	}
 
 	w.mu.RLock()
-	defer w.mu.RUnlock()
+	clients := make([]*connWithMu, 0, len(w.clients))
+	for _, c := range w.clients {
+		clients = append(clients, c)
+	}
+	w.mu.RUnlock()
 
-	for client := range w.clients {
-		if err := client.WriteJSON(message); err != nil {
+	for _, c := range clients {
+		if err := c.WriteJSON(message); err != nil {
 			log.Printf("Error broadcasting to client: %v", err)
-			client.Close()
-			delete(w.clients, client)
+			c.conn.Close()
 		}
 	}
 }
@@ -261,17 +288,21 @@ func (w *WSManagerImpl) HandleMessage(conn *websocket.Conn, msg WSMessage) error
 			Type:          "notifications_list",
 			Notifications: notifications,
 		}
-		return conn.WriteJSON(response)
-		
+		c := w.GetClient(conn)
+		if c == nil {
+			return errors.New("client not found")
+		}
+		return c.WriteJSON(response)
+
 	case "mark_read":
 		if msg.NotificationID != "" {
 			return w.service.MarkNotificationAsRead(msg.NotificationID)
 		}
 		return errors.New("notification ID is required")
-		
+
 	case "clear_all":
 		return w.service.ClearAllNotifications()
-		
+
 	default:
 		return fmt.Errorf("unknown message type: %s", msg.Type)
 	}
@@ -345,6 +376,11 @@ func (h *NotificationHandler) ClearAll(c *gin.Context) {
 	c.JSON(http.StatusOK, SuccessResponse{Success: true})
 }
 
+const (
+	pingInterval = 30 * time.Second
+	pongWait     = 45 * time.Second
+)
+
 func (h *NotificationHandler) HandleWebSocket(c *gin.Context) {
 	conn, err := h.wsManager.(*WSManagerImpl).upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
@@ -359,6 +395,25 @@ func (h *NotificationHandler) HandleWebSocket(c *gin.Context) {
 
 	// 接続解除時にクライアントを削除
 	defer h.wsManager.RemoveClient(conn)
+
+	// Pongを受信したら読み取り期限を延長
+	conn.SetReadDeadline(time.Now().Add(pongWait))
+	conn.SetPongHandler(func(string) error {
+		conn.SetReadDeadline(time.Now().Add(pongWait))
+		return nil
+	})
+
+	// 定期的にPingを送信するgoroutine
+	cwm := h.wsManager.(*WSManagerImpl).GetClient(conn)
+	go func() {
+		ticker := time.NewTicker(pingInterval)
+		defer ticker.Stop()
+		for range ticker.C {
+			if err := cwm.WritePing(); err != nil {
+				return
+			}
+		}
+	}()
 
 	for {
 		var msg WSMessage
