@@ -5,3 +5,6 @@ build:
 
 clean:
 	rm -f notibag-send
+
+install: build
+	mkdir -p ~/.local/bin && cp ./notibag-send ~/.local/bin
