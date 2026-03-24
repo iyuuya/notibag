@@ -17,6 +17,7 @@ type Notification struct {
 	ID        string    `json:"id"`
 	Title     string    `json:"title"`
 	Message   string    `json:"message"`
+	Type      string    `json:"type"`
 	Timestamp time.Time `json:"timestamp"`
 	Read      bool      `json:"read"`
 }
@@ -25,6 +26,7 @@ type Notification struct {
 type CreateNotificationRequest struct {
 	Title   string `json:"title" binding:"required"`
 	Message string `json:"message" binding:"required"`
+	Type    string `json:"type"`
 }
 
 type NotificationsResponse struct {
@@ -59,7 +61,7 @@ type NotificationRepository interface {
 // Service interface
 type NotificationService interface {
 	GetUnreadNotifications() []Notification
-	CreateNotification(title, message string) (*Notification, error)
+	CreateNotification(title, message, notifType string) (*Notification, error)
 	MarkNotificationAsRead(id string) error
 	ClearAllNotifications() error
 }
@@ -85,6 +87,7 @@ func NewInMemoryNotificationRepository() *InMemoryNotificationRepository {
 				ID:        "1",
 				Title:     "システム起動",
 				Message:   "Notibagが正常に起動しました",
+				Type:      "info",
 				Timestamp: time.Now().Add(-5 * time.Minute),
 				Read:      false,
 			},
@@ -92,6 +95,7 @@ func NewInMemoryNotificationRepository() *InMemoryNotificationRepository {
 				ID:        "2",
 				Title:     "重要な更新",
 				Message:   "新しいバージョンが利用可能です。アップデートを確認してください。",
+				Type:      "warning",
 				Timestamp: time.Now().Add(-2 * time.Minute),
 				Read:      false,
 			},
@@ -163,15 +167,20 @@ func (s *NotificationServiceImpl) GetUnreadNotifications() []Notification {
 	return s.repo.GetUnread()
 }
 
-func (s *NotificationServiceImpl) CreateNotification(title, message string) (*Notification, error) {
+func (s *NotificationServiceImpl) CreateNotification(title, message, notifType string) (*Notification, error) {
 	if title == "" || message == "" {
 		return nil, errors.New("title and message are required")
 	}
-	
+
+	if notifType == "" {
+		notifType = "info"
+	}
+
 	notification := Notification{
 		ID:        generateID(),
 		Title:     title,
 		Message:   message,
+		Type:      notifType,
 		Timestamp: time.Now(),
 		Read:      false,
 	}
@@ -295,7 +304,7 @@ func (h *NotificationHandler) CreateNotification(c *gin.Context) {
 		return
 	}
 
-	notification, err := h.service.CreateNotification(req.Title, req.Message)
+	notification, err := h.service.CreateNotification(req.Title, req.Message, req.Type)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 		return

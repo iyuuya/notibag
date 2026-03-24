@@ -137,7 +137,7 @@ function App() {
             {notifications.map((notification) => (
               <div 
                 key={notification.id} 
-                className={`notification-card unread ${hidingNotifications.has(notification.id) ? 'hiding' : ''}`}
+                className={`notification-card unread type-${notification.type || 'info'} ${hidingNotifications.has(notification.id) ? 'hiding' : ''}`}
                 onClick={() => !hidingNotifications.has(notification.id) && markAsRead(notification.id)}
                 onTouchStart={() => {}} // タッチ反応を改善
               >

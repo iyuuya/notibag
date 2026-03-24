@@ -89,7 +89,22 @@
 .notification-card.unread {
   background: rgba(255, 255, 255, 1);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-  border-left: 5px solid #007AFF;
+}
+
+.notification-card.type-success {
+  border-left: 5px solid #28a745;
+}
+
+.notification-card.type-info {
+  border-left: 5px solid #17a2b8;
+}
+
+.notification-card.type-warning {
+  border-left: 5px solid #ffc107;
+}
+
+.notification-card.type-error {
+  border-left: 5px solid #dc3545;
 }
 
 .notification-card.hiding {

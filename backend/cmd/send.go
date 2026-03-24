@@ -18,6 +18,7 @@ type Config struct {
 type CreateNotificationRequest struct {
 	Title   string `json:"title"`
 	Message string `json:"message"`
+	Type    string `json:"type,omitempty"`
 }
 
 func loadConfig() (*Config, error) {
@@ -53,16 +54,24 @@ func main() {
 	var host = flag.String("host", config.Host, "Server host URL")
 	var title = flag.String("title", "", "Notification title")
 	var message = flag.String("message", "", "Notification message")
+	var notifType = flag.String("type", "", "Notification type (success, info, warning, error)")
 	flag.Parse()
 
 	if *title == "" || *message == "" {
-		fmt.Println("Usage: send -title <title> -message <message> [-host <host>]")
+		fmt.Println("Usage: send -title <title> -message <message> [-type <type>] [-host <host>]")
+		os.Exit(1)
+	}
+
+	validTypes := map[string]bool{"success": true, "info": true, "warning": true, "error": true, "": true}
+	if !validTypes[*notifType] {
+		fmt.Printf("Invalid type: %s (must be one of: success, info, warning, error)\n", *notifType)
 		os.Exit(1)
 	}
 
 	req := CreateNotificationRequest{
 		Title:   *title,
 		Message: *message,
+		Type:    *notifType,
 	}
 
 	jsonData, err := json.Marshal(req)
