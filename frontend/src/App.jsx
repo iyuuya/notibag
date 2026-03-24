@@ -5,22 +5,30 @@ function App() {
   const [notifications, setNotifications] = useState([])
   const [hidingNotifications, setHidingNotifications] = useState(new Set())
   const [currentTime, setCurrentTime] = useState(new Date())
+  const [connectionStatus, setConnectionStatus] = useState('connecting') // 'connected' | 'disconnected' | 'connecting'
   const ws = useRef(null)
 
   useEffect(() => {
+    let reconnectTimer = null
+    let reconnectDelay = 1000
+    const maxReconnectDelay = 30000
+    let intentionallyClosed = false
+
     // WebSocket接続
     const connectWebSocket = () => {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
       const wsUrl = `${protocol}//${window.location.host}/ws`
-      
+
       ws.current = new WebSocket(wsUrl)
-      
+
       ws.current.onopen = () => {
         console.log('WebSocket connected')
+        setConnectionStatus('connected')
+        reconnectDelay = 1000
         // 初期通知データを要求
         ws.current.send(JSON.stringify({ type: 'get_notifications' }))
       }
-      
+
       ws.current.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data)
@@ -33,11 +41,20 @@ function App() {
           console.error('Failed to parse message:', error)
         }
       }
-      
+
       ws.current.onclose = () => {
         console.log('WebSocket disconnected')
+        if (!intentionallyClosed) {
+          setConnectionStatus('disconnected')
+          console.log(`Reconnecting in ${reconnectDelay}ms...`)
+          reconnectTimer = setTimeout(() => {
+            setConnectionStatus('connecting')
+            reconnectDelay = Math.min(reconnectDelay * 2, maxReconnectDelay)
+            connectWebSocket()
+          }, reconnectDelay)
+        }
       }
-      
+
       ws.current.onerror = (error) => {
         console.error('WebSocket error:', error)
       }
@@ -46,6 +63,8 @@ function App() {
     connectWebSocket()
 
     return () => {
+      intentionallyClosed = true
+      clearTimeout(reconnectTimer)
       if (ws.current) {
         ws.current.close()
       }
@@ -121,11 +140,16 @@ function App() {
 
   return (
     <div className="App">
+      {connectionStatus !== 'connected' && (
+        <div className={`connection-banner ${connectionStatus}`}>
+          {connectionStatus === 'disconnected' ? '接続が切れました。再接続を待っています...' : '再接続中...'}
+        </div>
+      )}
       <div className="clock-widget">
         <div className="clock-time">{time}</div>
         <div className="clock-date">{date}</div>
       </div>
-      
+
       <main className="notifications-container">
         {notifications.length === 0 ? (
           <div className="empty-state">
