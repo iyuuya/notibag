@@ -48,6 +48,15 @@ make build
 }
 ```
 
+### 更新時
+
+frontendのvolumeを削除した上でビルドしなおす必要があります。
+```
+docker compose down -v
+docker compose build --no-cache
+docker compose up -d
+```
+
 ## プロジェクト構造
 
 ```
