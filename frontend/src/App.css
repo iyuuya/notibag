@@ -231,6 +231,38 @@
   }
 }
 
+/* すべて閉じるボタン */
+.clear-all-button {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(20px);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.clear-all-button:active {
+  transform: scale(0.95);
+  background: rgba(0, 0, 0, 0.8);
+}
+
+@supports (padding: max(0px)) {
+  .clear-all-button {
+    bottom: max(20px, env(safe-area-inset-bottom));
+    left: max(20px, env(safe-area-inset-left));
+  }
+}
+
 /* スクロールバーを完全に隠す */
 .notifications-container {
   scrollbar-width: none; /* Firefox */

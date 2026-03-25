@@ -83,21 +83,48 @@ function App() {
   const markAsRead = (id) => {
     // 即座にスライドアウトアニメーションを開始
     setHidingNotifications(prev => new Set([...prev, id]))
-    
+
     // WebSocketで既読マーク（バックグラウンドで）
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-      ws.current.send(JSON.stringify({ 
-        type: 'mark_read', 
-        notification_id: id 
+      ws.current.send(JSON.stringify({
+        type: 'mark_read',
+        notification_id: id
       }))
     }
-    
+
     // アニメーション完了後に通知をリストから削除
     setTimeout(() => {
       setNotifications(prev => prev.filter(notif => notif.id !== id))
       setHidingNotifications(prev => {
         const newSet = new Set(prev)
         newSet.delete(id)
+        return newSet
+      })
+    }, 300)
+  }
+
+  const markAllAsRead = () => {
+    const visibleIds = notifications
+      .filter(n => !hidingNotifications.has(n.id))
+      .map(n => n.id)
+    if (visibleIds.length === 0) return
+
+    setHidingNotifications(prev => new Set([...prev, ...visibleIds]))
+
+    visibleIds.forEach(id => {
+      if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+        ws.current.send(JSON.stringify({
+          type: 'mark_read',
+          notification_id: id
+        }))
+      }
+    })
+
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => !visibleIds.includes(n.id)))
+      setHidingNotifications(prev => {
+        const newSet = new Set(prev)
+        visibleIds.forEach(id => newSet.delete(id))
         return newSet
       })
     }, 300)
@@ -177,6 +204,11 @@ function App() {
           </div>
         )}
       </main>
+      {notifications.length > 0 && (
+        <button className="clear-all-button" onClick={markAllAsRead}>
+          すべて閉じる
+        </button>
+      )}
     </div>
   )
 }
