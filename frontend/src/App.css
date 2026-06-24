@@ -8,17 +8,24 @@
   position: relative;
 }
 
-.clock-widget {
+.bottom-bar {
   position: fixed;
   bottom: 20px;
-  right: 20px;
+  left: 20px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  z-index: 1000;
+}
+
+.clock-widget {
   background: rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(20px);
   border-radius: 12px;
   padding: 12px 16px;
   text-align: center;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  z-index: 1000;
   user-select: none;
 }
 
@@ -191,10 +198,10 @@
     padding-top: max(20px, env(safe-area-inset-top));
     padding-bottom: max(20px, env(safe-area-inset-bottom));
   }
-  
-  .clock-widget {
+
+  .bottom-bar {
     bottom: max(20px, env(safe-area-inset-bottom));
-    right: max(20px, env(safe-area-inset-right));
+    left: max(20px, env(safe-area-inset-left));
   }
 }
 
@@ -233,10 +240,6 @@
 
 /* すべて閉じるボタン */
 .clear-all-button {
-  position: fixed;
-  bottom: 20px;
-  left: 20px;
-  z-index: 9999;
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(20px);
   color: white;
@@ -254,13 +257,6 @@
 .clear-all-button:active {
   transform: scale(0.95);
   background: rgba(0, 0, 0, 0.8);
-}
-
-@supports (padding: max(0px)) {
-  .clear-all-button {
-    bottom: max(20px, env(safe-area-inset-bottom));
-    left: max(20px, env(safe-area-inset-left));
-  }
 }
 
 /* スクロールバーを完全に隠す */

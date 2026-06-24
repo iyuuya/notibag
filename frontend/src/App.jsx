@@ -172,11 +172,6 @@ function App() {
           {connectionStatus === 'disconnected' ? '接続が切れました。再接続を待っています...' : '再接続中...'}
         </div>
       )}
-      <div className="clock-widget">
-        <div className="clock-time">{time}</div>
-        <div className="clock-date">{date}</div>
-      </div>
-
       <main className="notifications-container">
         {notifications.length === 0 ? (
           <div className="empty-state">
@@ -186,8 +181,8 @@ function App() {
         ) : (
           <div className="notifications-grid">
             {notifications.map((notification) => (
-              <div 
-                key={notification.id} 
+              <div
+                key={notification.id}
                 className={`notification-card unread type-${notification.type || 'info'} ${hidingNotifications.has(notification.id) ? 'hiding' : ''}`}
                 onClick={() => !hidingNotifications.has(notification.id) && markAsRead(notification.id)}
                 onTouchStart={() => {}} // タッチ反応を改善
@@ -204,11 +199,18 @@ function App() {
           </div>
         )}
       </main>
-      {notifications.length > 0 && (
-        <button className="clear-all-button" onClick={markAllAsRead}>
-          すべて閉じる
-        </button>
-      )}
+
+      <div className="bottom-bar">
+        <div className="clock-widget">
+          <div className="clock-time">{time}</div>
+          <div className="clock-date">{date}</div>
+        </div>
+        {notifications.length > 0 && (
+          <button className="clear-all-button" onClick={markAllAsRead}>
+            すべて閉じる
+          </button>
+        )}
+      </div>
     </div>
   )
 }
