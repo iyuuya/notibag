@@ -15,7 +15,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     volumes:
-      - frontend-dist:/app/dist
+      - frontend-dist:/app/volume
     networks:
       - app-network
 

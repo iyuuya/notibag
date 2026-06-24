@@ -21,5 +21,5 @@ WORKDIR /app
 # Copy built files
 COPY --from=builder /app/dist ./dist
 
-# This container just provides the built files via volume
-CMD ["sh", "-c", "echo 'Frontend build completed' && sleep infinity"]
+# Copy built files to volume on startup, then keep container alive
+CMD ["sh", "-c", "cp -r /app/dist/. /app/volume/ && echo 'Frontend build completed' && sleep infinity"]
