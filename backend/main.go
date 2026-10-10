@@ -443,32 +443,32 @@ func setupCORS() gin.HandlerFunc {
 	}
 }
 
-func main() {
-	// 依存関係の注入
-	repo := NewInMemoryNotificationRepository()
-	service := NewNotificationService(repo)
-	wsManager := NewWSManager(service)
-	handler := NewNotificationHandler(service, wsManager)
-
+func setupRouter(handler *NotificationHandler) *gin.Engine {
 	r := gin.Default()
 	r.Use(setupCORS())
 
-	// API routes
 	api := r.Group("/api")
 	{
 		api.GET("/health", handler.HealthCheck)
 		api.POST("/notifications", handler.CreateNotification)
 		api.GET("/notifications", handler.GetNotifications)
-		api.GET("/notifications/all", handler.GetAllNotifications) // デバッグ用
+		api.GET("/notifications/all", handler.GetAllNotifications)
 		api.PUT("/notifications/:id/read", handler.MarkAsRead)
 		api.DELETE("/notifications", handler.ClearAll)
 	}
 
-	// WebSocket endpoint
 	r.GET("/ws", handler.HandleWebSocket)
+	return r
+}
+
+func main() {
+	repo := NewInMemoryNotificationRepository()
+	service := NewNotificationService(repo)
+	wsManager := NewWSManager(service)
+	handler := NewNotificationHandler(service, wsManager)
 
 	log.Println("Server starting on :8080")
-	r.Run(":8080")
+	setupRouter(handler).Run(":8080")
 }
 
 // Utility functions
